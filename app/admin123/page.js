@@ -1,0 +1,431 @@
+'use client'
+
+import { useState, useEffect } from "react";
+import { firestore } from "@/firebase";
+import {
+  Box, Stack, Typography, Button, TextField, MenuItem, Divider,
+  ToggleButton, ToggleButtonGroup
+} from "@mui/material";
+import {
+  collection, addDoc, getDoc, getDocs, query, orderBy, deleteDoc, doc as firestoreDoc, runTransaction
+} from "firebase/firestore";
+import dayjs from 'dayjs';
+import Link from 'next/link';
+import { CircularProgress } from '@mui/material';
+
+export default function Home() {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [expenses, setExpenses] = useState([]);
+  const [amount, setAmount] = useState('');
+  const [festival, setFestival] = useState('');
+  const [category, setCategory] = useState('');
+  const [date, setDate] = useState(dayjs().format('YYYY-MM-DD HH:mm:ss'));
+  const [note, setNote] = useState('');
+  const [reference, setReference] = useState('');
+  const [residentName, setResidentName] = useState('');
+  const [residentPhone, setResidentPhone] = useState('');
+  const [residentNames, setResidentNames] = useState({});
+  const [residentPhones, setResidentPhones] = useState({});
+  const [type, setType] = useState('');
+  const [view, setView] = useState('all');
+
+  const updateExpenses = async () => {
+    const snapshot = query(collection(firestore, 'expense'));
+    const docs = await getDocs(snapshot);
+    const expenseList = [];
+    docs.forEach((doc) => {
+      expenseList.push({ id: doc.id, ...doc.data() });
+    });
+    expenseList.sort((a, b) => new Date(b.Date) - new Date(a.Date));
+    setExpenses(expenseList);
+  };
+
+  const updateResidents = async () => {
+    const snapshot = query(collection(firestore, 'directory'), orderBy('ResidentType', 'asc'));
+    const docs = await getDocs(snapshot);
+    const names = {};
+    const phones = {};
+    docs.forEach((doc) => {
+      const { Reference, ResidentName, ResidentPhone, ResidentType, ResidentEmail } = doc.data();
+      names[Reference] = ResidentName + (ResidentType ? ` (${ResidentType})` : '');
+      phones[Reference] = ResidentPhone;
+    });
+    setResidentNames(names);
+    setResidentPhones(phones);
+  };
+
+  const addExpense = async () => {
+    if (!amount || !festival || !category || !date || !type || !reference) {
+      alert("Please fill in all mandatory fields.");
+      return;
+    }
+
+    setIsProcessing(true); // 👈 Start processing
+
+    const amountValue = type === 'Income' ? Number(amount) : -Number(amount);
+
+    try {
+      const receiptNo = type === 'Income' ? await generateReceiptNo() : null;
+
+      await addDoc(collection(firestore, 'expense'), {
+        Amount: amountValue,
+        Festival: festival,
+        Category: category,
+        Date: date,
+        Note: note,
+        Reference: reference,
+        ResidentName: residentName,
+        ResidentPhone: residentPhone,
+        Type: type,
+        ...(receiptNo ? { ReceiptNo: receiptNo } : {})
+      });
+
+      await updateExpenses();
+
+      if(type === 'Income' && residentPhone) {
+
+        const configDocRef = firestoreDoc(collection(firestore, 'config'), 'sms');
+        const docSnap = await getDoc(configDocRef);
+        if (docSnap.exists()) {
+
+          const configData = docSnap.data();
+          const { SmsProvider, PhoneIP, HttpPort } = configData; 
+
+          const smsApiUrl = `http://${PhoneIP}:${HttpPort}`;
+          const sendSmsPage = (SmsProvider === 'SMSGateway') ? '/api/send-sms-gateway' : '/api/send-sms-twilio';
+
+          const formattedDate = dayjs(date).format('DD/MM/YYYY');
+          const smsMessage = `Thank you for your contribution of Rs ${Math.abs(amountValue)}/- towards Janpriya NileValley Block 1 cultural events. Receipt No: ${receiptNo}, Flat No: ${reference}, Date: ${formattedDate}`;
+
+          // Send SMS
+          const res = await fetch(sendSmsPage, {
+          //const res = await fetch('/api/send-sms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: residentPhone,
+              body: smsMessage,
+              smsApiUrl: smsApiUrl
+            }),
+          });
+
+          /*
+          const res = await fetch('/api/send-sms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: residentPhone,
+              body: smsMessage
+            }),
+          });
+          */
+
+          const data = await res.json();
+          if (data.success) {
+            console.log('SMS sent successfully!');
+          } else {
+            console.error(`Failed to send SMS: ${data.error}`);
+          }
+        }
+      }
+
+      resetForm();
+    } catch (error) {
+      console.error("Error adding entry:", error);
+      alert("Something went wrong while saving the entry.");
+    } finally {
+      setIsProcessing(false); // 👈 Done processing
+    }
+  };
+
+  const generateReceiptNo = async () => {
+    const year = new Date().getFullYear();
+    const counterRef = firestoreDoc(firestore, 'counters', `receipt-${year}`);
+
+    try {
+      const receiptNo = await runTransaction(firestore, async (transaction) => {
+        const counterDoc = await transaction.get(counterRef);
+
+        let current = 0;
+        if (counterDoc.exists()) {
+          current = counterDoc.data().count || 0;
+        }
+
+        const next = current + 1;
+        transaction.set(counterRef, { count: next }, { merge: true });
+
+        const padded = String(next).padStart(3, '0');
+        return `CUL-${year}-${padded}`;
+      });
+
+      return receiptNo;
+    } catch (error) {
+      console.error("Error generating receipt number in transaction:", error);
+      return null;
+    }
+  };
+
+  const removeExpense = async (id) => {
+    if (confirm("Are you sure you want to delete?")) {
+      await deleteDoc(firestoreDoc(firestore, 'Expense', id));
+      await updateExpenses();
+    }
+  };
+
+  const resetForm = () => {
+    setAmount('');
+    setFestival('');
+    setCategory('');
+    setDate(dayjs().format('YYYY-MM-DD HH:mm:ss'));
+    setNote('');
+    setReference('');
+    setResidentName('');
+    setResidentPhone('');
+    setType('');
+  };
+
+  useEffect(() => {
+    updateExpenses();
+    updateResidents();
+  }, []);
+
+  const incomeTotal = expenses.filter(e => e.Amount > 0).reduce((acc, e) => acc + Number(e.Amount), 0);
+  const expenseTotal = expenses.filter(e => e.Amount < 0).reduce((acc, e) => acc + Number(e.Amount), 0);
+
+  const filteredExpenses = expenses.filter(e => {
+    if (view === 'income') return e.Amount > 0;
+    if (view === 'expense') return e.Amount < 0;
+    return true;
+  });
+
+  const setResident = (value) => {
+    setResidentName(residentNames[value] || '');
+    setResidentPhone(residentPhones[value] ? residentPhones[value] : '');
+  };
+
+  const getCategories = () => {
+    return type === 'Income'
+      ? ["Contribution", "Sponsorship", "External"]
+      : ["Transport", "Prasadam", "Electricals", "Decoration", "Puja", "Bhandara", "Others"];
+  };
+
+  const getFestivals = () => {
+    return type === 'Income'
+      ? ["All Festivals", "Ganesh Festival", "Dussehra", "Bathukamma", "Christmas", "New Year", "Shankranti", "Republic Day", "Holi", "Sri Rama Navami", "Independence Day", "Janmasthmi"]
+      : ["Ganesh Festival", "Dussehra", "Bathukamma", "Christmas", "New Year", "Shankranti", "Republic Day", "Holi", "Sri Rama Navami", "Independence Day", "Janmasthmi"];
+    
+    //const list = ["Ganesh Festival", "Dussehra", "Bathukamma", "Christmas", "New Year", "Shankranti", "Republic Day", "Holi", "Sri Rama Navami", "Independence Day", "Janmasthmi"];
+    //return type === 'Income' ? ["All Festivals", ...list] : list;
+  };
+
+  return (
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      minHeight="100vh"
+      bgcolor="#f7f7f7"
+      sx={{ scrollBehavior: 'smooth' }} // Add smooth scrolling
+    >
+      <Box width="500px">
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+        <Typography variant="h4" align="center" color="#192bc2" gutterBottom>
+          JPNV Block 1 Cultural Fund
+        </Typography>
+        
+        {/* Balance Section */}
+        <Box textAlign="center" mb={4}>
+          <Typography variant="h6">Your Balance</Typography>
+          <Typography variant="h5">₹{incomeTotal + expenseTotal}</Typography>
+          <Stack direction="row" justifyContent="space-around" mt={2}>
+            <Box textAlign="center">
+              <Typography variant="body1">INCOME</Typography>
+              <Typography variant="h6" color="green">₹{incomeTotal}</Typography>
+            </Box>
+            <Divider orientation="vertical" flexItem />
+            <Box textAlign="center">
+              <Typography variant="body1">EXPENSE</Typography>
+              <Typography variant="h6" color="red">₹{Math.abs(expenseTotal)}</Typography>
+            </Box>
+          </Stack>
+        </Box>
+
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+        >
+        <Link href="/report">
+        <Button variant="contained">Flat-Wise Contributions</Button>
+        </Link>&nbsp;&nbsp;
+        <Link href="/search">
+        <Button variant="contained">Search Contributions</Button>
+        </Link>&nbsp;&nbsp;
+        <Link href="/config">
+        <Button variant="contained">APP Configuration</Button>
+        </Link>
+        </Box>
+        <p>&nbsp;</p>
+
+        {/* Add New Entry Section */}
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            Add New Entry
+          </Typography>
+          <Divider />
+          <p>&nbsp;</p>
+          <Stack spacing={2}>
+            <TextField
+              select
+              label="Type"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              fullWidth
+            >
+              <MenuItem value="Income">Income</MenuItem>
+              <MenuItem value="Expense">Expense</MenuItem>
+            </TextField>
+            <TextField
+              select
+              label="Festival"
+              value={festival}
+              onChange={(e) => setFestival(e.target.value)}
+              fullWidth
+              disabled={!type} // Disable until type is selected
+            >
+              {getFestivals().map(cat => (
+                <MenuItem key={cat} value={cat}>
+                  {cat}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              label="Category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              fullWidth
+              disabled={!type} // Disable until type is selected
+            >
+              {getCategories().map(cat => (
+                <MenuItem key={cat} value={cat}>
+                  {cat}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label="Flat No/Reference"
+              value={reference}
+              onChange={(e) => { setReference(e.target.value); setResident(e.target.value);}}
+              fullWidth
+            />
+            <TextField
+              label="Resident Name"
+              value={residentName}
+              onChange={(e) => setResidentName(e.target.value)}
+              fullWidth
+              style={{ display: !type || type === "Expense" ? 'none' : 'block' }}
+            />
+            <TextField
+              label="Resident Phone"
+              value={residentPhone}
+              onChange={(e) => setResidentPhone(e.target.value)}
+              fullWidth
+              style={{ display: !type || type === "Expense" ? 'none' : 'block' }}
+            />
+            <TextField
+              label="Amount"
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Date"
+              type="datetime-local"
+              InputLabelProps={{ shrink: true }}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              fullWidth
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={addExpense}
+              fullWidth
+            >
+              Add Entry
+            </Button>
+
+            {isProcessing && (
+              <Box display="flex" justifyContent="center">
+                <CircularProgress size={24} />
+              </Box>
+            )}
+
+            <p>&nbsp;</p>
+          </Stack>
+        </Box>
+
+        {/* History Section */}
+        <Box mb={4}>
+          <Typography variant="h6" gutterBottom>
+            History
+          </Typography>
+          <ToggleButtonGroup
+            value={view}
+            exclusive
+            onChange={(e, newView) => setView(newView)}
+            fullWidth
+            size="small"
+            sx={{ mb: 2 }}
+          >
+            <ToggleButton value="all">All</ToggleButton>
+            <ToggleButton value="income">Income</ToggleButton>
+            <ToggleButton value="expense">Expense</ToggleButton>
+          </ToggleButtonGroup>
+          <Divider />
+          <Stack mt={2} spacing={1}>
+            {filteredExpenses.map(({ id, Type, Festival, Category, ReceiptNo, Amount, Date, Note, Reference, ResidentName, ResidentPhone }) => (
+              <Box
+                key={id}
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                bgcolor="#fff"
+                border="1px solid #ddd"
+                borderRadius={1}
+                padding={2}
+              >
+                <Box>
+                  <Typography variant="body2">{Date} {ReceiptNo}</Typography>
+                  <Typography variant="body2">{Festival}, {Category}</Typography>
+                  <Typography variant="body2">Reference: {Reference}</Typography>
+                  {Type === 'Income' && (
+                  <Typography variant="body2">{ResidentName} ({ResidentPhone})</Typography>
+                  )}
+                  <Typography variant="body2">Note: {Note}</Typography>
+                </Box>
+                <Typography variant="h6" color={Amount > 0 ? "green" : "red"}>
+                  {Amount > 0 ? `+ ₹${Amount}` : `- ₹${Math.abs(Amount)}`}
+                </Typography>
+                <Button variant="text" color="error" onClick={() => removeExpense(id)}>
+                  DEL
+                </Button>
+              </Box>
+            ))}
+          </Stack>
+        </Box>
+
+        
+      </Box>
+    </Box>
+  );
+}

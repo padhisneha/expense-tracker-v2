@@ -1,0 +1,28 @@
+{
+  "name": "expense-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0",
+    "@mui/material": "^5.16.7",
+    "dayjs": "^1.11.13",
+    "firebase": "^10.13.0",
+    "net": "^1.0.2",
+    "next": "14.2.6",
+    "papaparse": "^5.5.3",
+    "react": "^18",
+    "react-dom": "^18",
+    "twilio": "^5.8.0"
+  },
+  "devDependencies": {
+    "eslint": "^8",
+    "eslint-config-next": "14.2.6"
+  }
+}
