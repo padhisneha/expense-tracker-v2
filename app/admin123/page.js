@@ -91,40 +91,56 @@ export default function Home() {
           const configData = docSnap.data();
           const { SmsProvider, PhoneIP, HttpPort } = configData; 
 
-          const smsApiUrl = `http://${PhoneIP}:${HttpPort}`;
-          const sendSmsPage = (SmsProvider === 'SMSGateway') ? '/api/send-sms-gateway' : '/api/send-sms-twilio';
-
           const formattedDate = dayjs(date).format('DD/MM/YYYY');
           const smsMessage = `Thank you for your contribution of Rs ${Math.abs(amountValue)}/- towards Janpriya NileValley Block 1 cultural events. Receipt No: ${receiptNo}, Flat No: ${reference}, Date: ${formattedDate}`;
 
-          // Send SMS
-          const res = await fetch(sendSmsPage, {
-          //const res = await fetch('/api/send-sms', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: residentPhone,
-              body: smsMessage,
-              smsApiUrl: smsApiUrl
-            }),
-          });
+          const smsApiUrl = `http://${PhoneIP}:${HttpPort}`;
+          //const sendSmsPage = (SmsProvider === 'SMSGateway') ? '/api/send-sms-gateway' : '/api/send-sms-twilio';
+          const sendSmsPage = '/api/send-sms-twilio';
 
-          /*
-          const res = await fetch('/api/send-sms', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: residentPhone,
-              body: smsMessage
-            }),
-          });
-          */
+          if (SmsProvider === 'SMSGateway') {
 
-          const data = await res.json();
-          if (data.success) {
-            console.log('SMS sent successfully!');
-          } else {
-            console.error(`Failed to send SMS: ${data.error}`);
+            const smsGatewayApiKey = process.env.NEXT_PUBLIC_SMS_GATEWAY_APIKEY;
+
+            const res = await fetch(smsApiUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                apiKey: smsGatewayApiKey,
+                to: residentPhone,
+                msg: smsMessage,
+              }),
+            });
+
+            const responseText = await res.text();
+
+            if (!res.ok) {
+              console.error(`Failed to send SMS: ${responseText}`);
+            } else {
+              console.log('SMS sent successfully!');
+            }
+          }
+          else if (SmsProvider === 'Twilio') {
+
+            // Send SMS
+            const res = await fetch(sendSmsPage, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                to: residentPhone,
+                body: smsMessage,
+                smsApiUrl: smsApiUrl
+              }),
+            });
+
+            const data = await res.json();
+            if (data.success) {
+              console.log('SMS sent successfully!');
+            } else {
+              console.error(`Failed to send SMS: ${data.error}`);
+            }
           }
         }
       }
