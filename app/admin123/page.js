@@ -273,10 +273,10 @@ export default function Home() {
           alignItems="center"
         >
         <Link href="/report">
-        <Button variant="contained">Flat-Wise Contributions</Button>
+        <Button variant="contained">Flat-Wise Donations</Button>
         </Link>&nbsp;&nbsp;
         <Link href="/search">
-        <Button variant="contained">Search Contributions</Button>
+        <Button variant="contained">Search Donations</Button>
         </Link>&nbsp;&nbsp;
         <Link href="/config">
         <Button variant="contained">APP Config</Button>
