@@ -279,7 +279,7 @@ export default function Home() {
         <Button variant="contained">Search Contributions</Button>
         </Link>&nbsp;&nbsp;
         <Link href="/config">
-        <Button variant="contained">APP Configuration</Button>
+        <Button variant="contained">APP Config</Button>
         </Link>
         </Box>
         <p>&nbsp;</p>
