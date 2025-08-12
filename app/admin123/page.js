@@ -101,6 +101,8 @@ export default function Home() {
           if (SmsProvider === 'SMSGateway') {
 
             const smsGatewayApiKey = process.env.NEXT_PUBLIC_SMS_GATEWAY_APIKEY;
+			
+			console.log('smsGatewayApiKey: ' + smsGatewayApiKey);
 
             const res = await fetch(smsApiUrl, {
               method: 'POST',
