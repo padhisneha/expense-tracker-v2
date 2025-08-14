@@ -49,14 +49,22 @@ export default function Contributions() {
       const q = query(collection(firestore, 'expense'), where('Type', '==', 'Income'));
       const querySnapshot = await getDocs(q);
       const flatContributions = {};
+      const flatResident = {};
 
       querySnapshot.forEach((doc) => {
-        const { Reference, Amount } = doc.data();
-        if (flatContributions[Reference]) {
-          flatContributions[Reference] += Amount;
+        const { Reference, ResidentName, Amount } = doc.data();
+        const flatKey = Reference?.toString().trim(); // ensure string & trimmed
+
+        if (!flatKey) return;
+
+        if (flatContributions[flatKey]) {
+          flatContributions[flatKey] += Amount;
         } else {
-          flatContributions[Reference] = Amount;
+          flatContributions[flatKey] = Amount;
         }
+
+        // Always update resident name if available
+        flatResident[flatKey] = ResidentName || "";
       });
 
       const allFlats1 = generateFlatNumbers1();
@@ -65,14 +73,17 @@ export default function Contributions() {
 
       const contributionList1 = allFlats1.map((flatNo) => ({
         flatNo,
+        residentName: flatResident[flatNo] || "",
         totalContribution: flatContributions[flatNo] || "",
       }));
       const contributionList2 = allFlats2.map((flatNo) => ({
         flatNo,
+        residentName: flatResident[flatNo] || "",
         totalContribution: flatContributions[flatNo] || "",
       }));
       const contributionList3 = allFlats3.map((flatNo) => ({
         flatNo,
+        residentName: flatResident[flatNo] || "",
         totalContribution: flatContributions[flatNo] || "",
       }));
 
@@ -98,13 +109,15 @@ export default function Contributions() {
         <TableHead>
           <TableRow>
             <TableCell><strong>Flat</strong></TableCell>
+            <TableCell><strong>Resident</strong></TableCell>
             <TableCell><strong>Amount</strong></TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {contributions.map(({ flatNo, totalContribution }) => (
+          {contributions.map(({ flatNo, residentName, totalContribution }) => (
             <TableRow key={flatNo}>
               <TableCell>{flatNo}</TableCell>
+              <TableCell>{residentName}</TableCell>
               <TableCell>{totalContribution}</TableCell>
             </TableRow>
           ))}

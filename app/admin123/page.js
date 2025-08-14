@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { firestore } from "@/firebase";
 import {
   Box, Stack, Typography, Button, TextField, MenuItem, Divider,
-  ToggleButton, ToggleButtonGroup
+  ToggleButton, ToggleButtonGroup, Container, Card, CardContent
 } from "@mui/material";
 import {
   collection, addDoc, getDoc, getDocs, query, orderBy, deleteDoc, doc as firestoreDoc, runTransaction
@@ -14,6 +14,39 @@ import Link from 'next/link';
 import { CircularProgress } from '@mui/material';
 
 export default function Home() {
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  // Check if already logged in (session storage)
+  useEffect(() => {
+    const loggedIn = sessionStorage.getItem("isAuthenticated");
+    if (loggedIn === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogin = () => {
+    // Change these values to your desired credentials
+    const validUser = "admin";
+    const validPass = "pass123";
+
+    if (username === validUser && password === validPass) {
+      setIsAuthenticated(true);
+      sessionStorage.setItem("isAuthenticated", "true");
+    } else {
+      alert("Invalid credentials");
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    sessionStorage.removeItem("isAuthenticated");
+  };
+
+ 
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [expenses, setExpenses] = useState([]);
   const [amount, setAmount] = useState('');
@@ -82,6 +115,7 @@ export default function Home() {
 
       await updateExpenses();
 
+      /*
       if(type === 'Income' && residentPhone) {
 
         const configDocRef = firestoreDoc(collection(firestore, 'config'), 'sms');
@@ -101,9 +135,6 @@ export default function Home() {
           if (SmsProvider === 'SMSGateway') {
 
             const smsGatewayApiKey = process.env.NEXT_PUBLIC_SMS_GATEWAY_APIKEY;
-			
-			console.log("URL: " + smsApiUrl);
-			console.log('smsGatewayApiKey: "' + smsGatewayApiKey + '"');
 
             const res = await fetch(smsApiUrl, {
               method: 'POST',
@@ -147,6 +178,7 @@ export default function Home() {
           }
         }
       }
+      */
 
       resetForm();
     } catch (error) {
@@ -186,10 +218,38 @@ export default function Home() {
 
   const removeExpense = async (id) => {
     if (confirm("Are you sure you want to delete?")) {
-      await deleteDoc(firestoreDoc(firestore, 'Expense', id));
+      await deleteDoc(firestoreDoc(firestore, 'expense', id));
       await updateExpenses();
     }
   };
+
+  const handleSendSMS = async (reference, residentName, residentPhone, amount, receiptNo, date) => {
+
+    const configDocRef = firestoreDoc(collection(firestore, 'config'), 'sms');
+    const docSnap = await getDoc(configDocRef);
+    if (docSnap.exists()) {
+
+      const configData = docSnap.data();
+      const { SmsProvider, PhoneIP, HttpPort } = configData;
+
+      if (SmsProvider === 'SMSGateway') {
+
+        const smsGatewayApiKey = process.env.NEXT_PUBLIC_SMS_GATEWAY_APIKEY;
+        const randomStr = Math.random().toString(36).substring(2, 10); // random 8-char string
+        const formattedDate = dayjs(date).format('DD/MM/YYYY');
+        const smsMessage = `Thank you for your contribution of Rs ${Math.abs(amount)}/- towards Janpriya NileValley Block 1 cultural events. Receipt No: ${receiptNo}, Flat No: ${reference}, Date: ${formattedDate}`;
+
+        //const smsApiUrl = `http://${PhoneIP}:${HttpPort}/?apiKey=${smsGatewayApiKey}&to=${encodeURIComponent(residentPhone)}&msg=${encodeURIComponent(smsMessage)}&r=${randomStr}`;
+        const smsApiUrl = `http://${PhoneIP}:${HttpPort}/?apiKey=${smsGatewayApiKey}&to=${residentPhone}&msg=${smsMessage}&r=${randomStr}`;
+        //window.open(smsApiUrl, "_blank"); // _blank = new tab
+        //window.location = smsApiUrl; // replace current page with SMS gateway URL
+
+        const iframe = document.getElementById("smsIframeContainer");
+        alert(iframe.src);
+        iframe.src = smsApiUrl;
+      }
+    }
+  }
 
   const resetForm = () => {
     setAmount('');
@@ -237,7 +297,55 @@ export default function Home() {
     //return type === 'Income' ? ["All Festivals", ...list] : list;
   };
 
-  return (
+
+
+  const loginForm = (
+    <>
+      <Container maxWidth="xs" sx={{ mt: 4 }}>
+      {/* Header */}
+      <Typography variant="h5" align="center" color="#192bc2" gutterBottom>
+        JPNV Block 1 Cultural Fund
+      </Typography>
+
+      {/* Login Card */}
+      <Card sx={{ boxShadow: 3, borderRadius: 2 }}>
+        <CardContent>
+          <Typography variant="h6" align="center" gutterBottom>
+            Admin Panel Login
+          </Typography>
+
+          <Box display="flex" flexDirection="column" gap={2}>
+            <TextField
+              label="Username"
+              variant="outlined"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Password"
+              variant="outlined"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              fullWidth
+            />
+            <Button
+              variant="contained"
+              onClick={handleLogin}
+              sx={{ backgroundColor: "#192bc2", "&:hover": { backgroundColor: "#0f1e87" } }}
+              fullWidth
+            >
+              Login
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+    </Container>
+    </>
+  );
+
+  const adminContent = (
     <Box
       display="flex"
       justifyContent="center"
@@ -269,22 +377,69 @@ export default function Home() {
             </Box>
           </Stack>
         </Box>
+      
 
         <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-        >
-        <Link href="/report">
-        <Button variant="contained">Flat-Wise Donations</Button>
-        </Link>&nbsp;&nbsp;
-        <Link href="/search">
-        <Button variant="contained">Search Donations</Button>
-        </Link>&nbsp;&nbsp;
-        <Link href="/config">
-        <Button variant="contained">APP Config</Button>
+        display="flex"
+        flexDirection={{ xs: "column", sm: "row" }} // vertical on xs, horizontal on sm+
+        justifyContent="center"
+        alignItems="center"
+        gap={2}
+        mb={2}
+        width="100%"
+      >
+        <Link href="/report" style={{ flex: 1 }}>
+          <Button variant="contained" fullWidth>
+            Flat-Wise Contributions
+          </Button>
         </Link>
-        </Box>
+        <Link href="/search" style={{ flex: 1 }}>
+          <Button variant="contained" fullWidth>
+            Search Contributions
+          </Button>
+        </Link>
+      </Box>
+
+      {/* Second row */}
+      <Box
+        display="flex"
+        flexDirection={{ xs: "column", sm: "row" }} // vertical on xs, horizontal on sm+
+        justifyContent="center"
+        alignItems="center"
+        gap={2}
+        mb={2}
+        width="100%"
+      >
+        <Link href="/report-llm" style={{ flex: 1 }}>
+          <Button variant="contained" fullWidth>
+            Financial Report
+          </Button>
+        </Link>
+        <Link href="/config" style={{ flex: 1 }}>
+          <Button variant="contained" fullWidth>
+            APP Configuration
+          </Button>
+        </Link>
+      </Box>
+
+      {/* third row */}
+      <Box
+        display="flex"
+        flexDirection={{ xs: "column", sm: "row" }} // vertical on xs, horizontal on sm+
+        justifyContent="center"
+        alignItems="center"
+        gap={2}
+        width="100%"
+      >
+        <Link href="#" style={{ flex: 1 }}>
+          <Button onClick={handleLogout} variant="contained" fullWidth>
+            Logout
+          </Button>
+        </Link>
+
+      </Box>
+
+
         <p>&nbsp;</p>
 
         {/* Add New Entry Section */}
@@ -396,7 +551,7 @@ export default function Home() {
         {/* History Section */}
         <Box mb={4}>
           <Typography variant="h6" gutterBottom>
-            History
+            &nbsp;
           </Typography>
           <ToggleButtonGroup
             value={view}
@@ -411,6 +566,12 @@ export default function Home() {
             <ToggleButton value="expense">Expense</ToggleButton>
           </ToggleButtonGroup>
           <Divider />
+          <iframe
+            id="smsIframeContainer" 
+            name="smsIframeContainer"
+            src=""
+            style={{ width: "100%", height: "50px", border: 1, borderColor: "#ddd", borderRadius: 8 }}
+            title="Send SMS IFrame"></iframe>
           <Stack mt={2} spacing={1}>
             {filteredExpenses.map(({ id, Type, Festival, Category, ReceiptNo, Amount, Date, Note, Reference, ResidentName, ResidentPhone }) => (
               <Box
@@ -424,16 +585,22 @@ export default function Home() {
                 padding={2}
               >
                 <Box>
-                  <Typography variant="body2">{Date} {ReceiptNo}</Typography>
+                  <Typography variant="body2">{Date}<br/>{ReceiptNo}</Typography>
                   <Typography variant="body2">{Festival}, {Category}</Typography>
-                  <Typography variant="body2">Reference: {Reference}</Typography>
+                  <Typography variant="body2">Flat No. / Ref: {Reference}</Typography>
                   {Type === 'Income' && (
-                  <Typography variant="body2">{ResidentName} ({ResidentPhone})</Typography>
+                  <Typography variant="body2">{ResidentName}</Typography>
                   )}
+                  {Note != '' && (
                   <Typography variant="body2">Note: {Note}</Typography>
+                  )}
                 </Box>
                 <Typography variant="h6" color={Amount > 0 ? "green" : "red"}>
                   {Amount > 0 ? `+ ₹${Amount}` : `- ₹${Math.abs(Amount)}`}
+                  <br />
+                  {Amount > 0 && (
+                  <Button variant="h6" color="blue" onClick={() => handleSendSMS(Reference, ResidentName, ResidentPhone, Amount, ReceiptNo, Date)}>Send Receipt</Button>
+                  )}
                 </Typography>
                 <Button variant="text" color="error" onClick={() => removeExpense(id)}>
                   DEL
@@ -443,8 +610,13 @@ export default function Home() {
           </Stack>
         </Box>
 
-        
       </Box>
     </Box>
+  );
+
+  return (
+    <div style={{ padding: "20px" }}>
+      {isAuthenticated ? adminContent : loginForm}
+    </div>
   );
 }

@@ -29,12 +29,18 @@ export default function ViewOnly() {
     updateExpenses();
   }, []);
 
-  // Filter by positive amount and matching reference (if any search term)
+  // Filter by positive amount and matching reference or resident name (case-insensitive)
   const filteredExpenses = expenses.filter((expense) => {
+    const term = searchTerm?.toLowerCase() || "";
+
     return (
       expense.Amount > 0 &&
-      expense.Reference &&
-      expense.Reference.toString().includes(searchTerm)
+      (
+        (expense.Reference &&
+          expense.Reference.toString().toLowerCase().includes(term)) ||
+        (expense.ResidentName &&
+          expense.ResidentName.toString().toLowerCase().includes(term))
+      )
     );
   });
 
@@ -49,12 +55,12 @@ export default function ViewOnly() {
     >
       <Box width="500px">
         <Typography variant="h4" align="center" color="#192bc2" gutterBottom>
-          JPNV Block 1 Cultural Fund
+          Search Contributions
         </Typography>
 
         <Box display="flex" justifyContent="center" alignItems="center" mb={2}>
           <input
-            placeholder="Search by Reference"
+            placeholder="Search by Flat No. or Resident Name"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
@@ -70,9 +76,7 @@ export default function ViewOnly() {
 
         {/* Contribution History */}
         <Box mb={4}>
-          <Typography variant="h6" gutterBottom>
-            Contribution Details
-          </Typography>
+
           <Divider />
           <Stack mt={2} spacing={1}>
             {filteredExpenses.map(({ id, Festival, Category, ReceiptNo, Amount, Date, Note, Reference, ResidentName, ResidentPhone}) => (
@@ -87,11 +91,13 @@ export default function ViewOnly() {
                 padding={2}
               >
                 <Box>
-                  <Typography variant="body2">{Date}, {ReceiptNo}</Typography>
+                  <Typography variant="body2">{Date}<br/>{ReceiptNo}</Typography>
                   <Typography variant="body2">{Festival}, {Category}</Typography>
-                  <Typography variant="body2">Reference: {Reference}</Typography>
-                  <Typography variant="body2">{ResidentName} ({ResidentPhone})</Typography>
+                  <Typography variant="body2">Flat No. / Ref: {Reference}</Typography>
+                  <Typography variant="body2">{ResidentName}</Typography>
+                  {Note != '' && (
                   <Typography variant="body2">Note: {Note}</Typography>
+                  )}
                 </Box>
                 <Typography variant="h6" color="green">
                   + ₹{Amount}
