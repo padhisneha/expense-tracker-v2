@@ -1,8 +1,9 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function EventDetails() {
+function EventDetailsContent() {
   const searchParams = useSearchParams();
   const event = searchParams.get('event');
 
@@ -51,9 +52,7 @@ export default function EventDetails() {
   };
 
   return (
-    
     <div className="event-page">
-      {/* Page-specific styles */}
       <style jsx>{`
         .event-page {
           display: flex;
@@ -94,32 +93,39 @@ export default function EventDetails() {
           color: #4b5563;
         }
       `}</style>
+
       <div className="event-card">
         <h1>{details.name}</h1>
-
         {details.date && (
           <>
             <p><strong>📅 Date:</strong> {details.date}</p>
             <p><strong>📍 Venue:</strong> {details.venue}</p>
 
             <h2>🎯 Program Details:</h2>
-            <br></br>
+            <br />
             <ul>
               {details.program.map((item, index) => (
                 <li key={index}>{item}</li>
               ))}
             </ul>
 
-            <br></br>
+            <br />
             <p>
-              <strong>📞 Point of Contact:</strong>{" "}
-              <br></br><br></br>{details.contact.name} ({details.contact.phone})
+              <strong>📞 Point of Contact:</strong>
+              <br /><br />
+              {details.contact.name} ({details.contact.phone})
             </p>
           </>
         )}
       </div>
-
-      
     </div>
+  );
+}
+
+export default function EventDetails() {
+  return (
+    <Suspense fallback={<div>Loading event details...</div>}>
+      <EventDetailsContent />
+    </Suspense>
   );
 }
