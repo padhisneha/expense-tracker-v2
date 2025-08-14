@@ -78,41 +78,32 @@ export default function ViewOnly() {
         </Box>
 
         <Box
-        display="flex"
-        flexDirection={{ xs: "column", sm: "row" }} // vertical on xs, horizontal on sm+
-        justifyContent="center"
-        alignItems="center"
-        gap={2}
-        mb={2}
-        width="100%"
-      >
-        <Link href="/report" style={{ flex: 1 }}>
-          <Button variant="contained" fullWidth>
-            Flat-Wise Contributions
-          </Button>
-        </Link>
-        <Link href="/search" style={{ flex: 1 }}>
-          <Button variant="contained" fullWidth>
-            Search Contributions
-          </Button>
-        </Link>
-      </Box>
+          display="flex"
+          flexDirection={{ xs: "column", sm: "row" }} // stack on mobile, row on sm+
+          justifyContent="center"
+          alignItems="stretch"
+          gap={2}
+          width="100%"
+          mb={2}
+        >
+          <Link href="/report" style={{ flex: 1 }}>
+            <Button variant="contained" fullWidth>
+              Flat-Wise Contributions
+            </Button>
+          </Link>
 
-      {/* Second row */}
-      <Box
-        display="flex"
-        flexDirection={{ xs: "column", sm: "row" }} // vertical on xs, horizontal on sm+
-        justifyContent="center"
-        alignItems="center"
-        gap={2}
-        width="100%"
-      >
-        <Link href="/report-llm" style={{ flex: 1 }}>
-          <Button variant="contained" fullWidth>
-            Financial Report
-          </Button>
-        </Link>
-      </Box>
+          <Link href="/search" style={{ flex: 1 }}>
+            <Button variant="contained" fullWidth>
+              Search Contributions
+            </Button>
+          </Link>
+
+          <Link href="/report-llm" style={{ flex: 1 }}>
+            <Button variant="contained" fullWidth>
+              Financial Report
+            </Button>
+          </Link>
+        </Box>
 
         {/* History Section */}
         <Box mb={4}>
@@ -146,13 +137,15 @@ export default function ViewOnly() {
               >
                 <Box>
                   <Typography variant="body2">{Date}<br/>{ReceiptNo}</Typography>
+                  {/*
                   <Typography variant="body1">{Festival}, {Category}</Typography>
-                  <Typography variant="body2">Flat No. / Ref: {Reference}</Typography>
+                  */}
+                  <Typography variant="body2">{Reference}</Typography>
                   {Type === 'Income' && (
                   <Typography variant="body2">{ResidentName}</Typography>
                   )}
                   {Note != '' && (
-                  <Typography variant="body2">Note: {Note}</Typography>
+                  <Typography variant="body2">{Note}</Typography>
                   )}
                 </Box>
                 <Typography variant="h6" color={Amount > 0 ? "green" : "red"}>

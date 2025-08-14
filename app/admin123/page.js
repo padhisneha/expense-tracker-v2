@@ -380,64 +380,44 @@ export default function Home() {
       
 
         <Box
-        display="flex"
-        flexDirection={{ xs: "column", sm: "row" }} // vertical on xs, horizontal on sm+
-        justifyContent="center"
-        alignItems="center"
-        gap={2}
-        mb={2}
-        width="100%"
-      >
-        <Link href="/report" style={{ flex: 1 }}>
-          <Button variant="contained" fullWidth>
-            Flat-Wise Contributions
-          </Button>
-        </Link>
-        <Link href="/search" style={{ flex: 1 }}>
-          <Button variant="contained" fullWidth>
-            Search Contributions
-          </Button>
-        </Link>
-      </Box>
+          display="flex"
+          flexDirection={{ xs: "column", sm: "row" }}
+          justifyContent="center"
+          alignItems="stretch"
+          gap={2}
+          mb={2}
+          width="100%"
+        >
+          <Link href="/report" style={{ flex: 1 }}>
+            <Button variant="contained" fullWidth>
+              Flat-Wise Contributions
+            </Button>
+          </Link>
 
-      {/* Second row */}
-      <Box
-        display="flex"
-        flexDirection={{ xs: "column", sm: "row" }} // vertical on xs, horizontal on sm+
-        justifyContent="center"
-        alignItems="center"
-        gap={2}
-        mb={2}
-        width="100%"
-      >
-        <Link href="/report-llm" style={{ flex: 1 }}>
-          <Button variant="contained" fullWidth>
-            Financial Report
-          </Button>
-        </Link>
-        <Link href="/config" style={{ flex: 1 }}>
-          <Button variant="contained" fullWidth>
-            APP Configuration
-          </Button>
-        </Link>
-      </Box>
+          <Link href="/search" style={{ flex: 1 }}>
+            <Button variant="contained" fullWidth>
+              Search Contributions
+            </Button>
+          </Link>
 
-      {/* third row */}
-      <Box
-        display="flex"
-        flexDirection={{ xs: "column", sm: "row" }} // vertical on xs, horizontal on sm+
-        justifyContent="center"
-        alignItems="center"
-        gap={2}
-        width="100%"
-      >
-        <Link href="#" style={{ flex: 1 }}>
-          <Button onClick={handleLogout} variant="contained" fullWidth>
-            Logout
-          </Button>
-        </Link>
+          <Link href="/report-llm" style={{ flex: 1 }}>
+            <Button variant="contained" fullWidth>
+              Financial Report
+            </Button>
+          </Link>
 
-      </Box>
+          <Link href="/config" style={{ flex: 1 }}>
+            <Button variant="contained" fullWidth>
+              APP Configuration
+            </Button>
+          </Link>
+
+          <Link href="#" style={{ flex: 1 }}>
+            <Button onClick={handleLogout} variant="contained" fullWidth>
+              Logout
+            </Button>
+          </Link>
+        </Box>
 
 
         <p>&nbsp;</p>
