@@ -242,11 +242,11 @@ export default function Home() {
         //const smsApiUrl = `http://${PhoneIP}:${HttpPort}/?apiKey=${smsGatewayApiKey}&to=${encodeURIComponent(residentPhone)}&msg=${encodeURIComponent(smsMessage)}&r=${randomStr}`;
         const smsApiUrl = `http://${PhoneIP}:${HttpPort}/?apiKey=${smsGatewayApiKey}&to=${residentPhone}&msg=${smsMessage}&r=${randomStr}`;
         //window.open(smsApiUrl, "_blank"); // _blank = new tab
-        //window.location = smsApiUrl; // replace current page with SMS gateway URL
+        window.location = smsApiUrl; // replace current page with SMS gateway URL
 
-        const iframe = document.getElementById("smsIframeContainer");
-        alert(iframe.src);
-        iframe.src = smsApiUrl;
+        //const iframe = document.getElementById("smsIframeContainer");
+        //alert(iframe.src);
+        //iframe.src = smsApiUrl;
       }
     }
   }
