@@ -241,7 +241,7 @@ export default function Home() {
 
         //const smsApiUrl = `http://${PhoneIP}:${HttpPort}/?apiKey=${smsGatewayApiKey}&to=${encodeURIComponent(residentPhone)}&msg=${encodeURIComponent(smsMessage)}&r=${randomStr}`;
         const smsApiUrl = `http://${PhoneIP}:${HttpPort}/?apiKey=${smsGatewayApiKey}&to=${residentPhone}&msg=${smsMessage}&r=${randomStr}`;
-        // window.open(smsApiUrl, "_blank"); // _blank = new tab
+        //window.open(smsApiUrl, "_blank"); // _blank = new tab
         window.location = smsApiUrl; // replace current page with SMS gateway URL
 
         //const iframe = document.getElementById("smsIframeContainer");
@@ -285,13 +285,13 @@ export default function Home() {
   const getCategories = () => {
     return type === 'Income'
       ? ["Contribution", "Sponsorship", "External"]
-      : ["Transport", "Prasadam", "Electricals", "Decoration", "Puja", "Bhandara", "Others"];
+      : [ "Idol", "Decoration", "Puja Samagri", "Electricals", "Prasadam", "Bhandara", "Sports/Medals", "Transport", "Procession", "Miscellaneous"];
   };
 
   const getFestivals = () => {
     return type === 'Income'
-      ? ["All Festivals", "Ganesh Festival", "Dussehra", "Bathukamma", "Christmas", "New Year", "Shankranti", "Republic Day", "Holi", "Sri Rama Navami", "Independence Day", "Janmasthmi"]
-      : ["Ganesh Festival", "Dussehra", "Bathukamma", "Christmas", "New Year", "Shankranti", "Republic Day", "Holi", "Sri Rama Navami", "Independence Day", "Janmasthmi"];
+      ? ["All Festivals", "Janmasthmi", "Ganesh Festival", "Dussehra", "Bathukamma", "Christmas", "New Year", "Shankranti", "Republic Day", "Holi", "Sri Rama Navami", "Independence Day" ]
+      : ["All Festivals", "Janmasthmi", "Ganesh Festival", "Dussehra", "Bathukamma", "Christmas", "New Year", "Shankranti", "Republic Day", "Holi", "Sri Rama Navami", "Independence Day"];
     
     //const list = ["Ganesh Festival", "Dussehra", "Bathukamma", "Christmas", "New Year", "Shankranti", "Republic Day", "Holi", "Sri Rama Navami", "Independence Day", "Janmasthmi"];
     //return type === 'Income' ? ["All Festivals", ...list] : list;
@@ -586,13 +586,15 @@ export default function Home() {
               >
                 <Box>
                   <Typography variant="body2">{Date}<br/>{ReceiptNo}</Typography>
+                  {/*
                   <Typography variant="body2">{Festival}, {Category}</Typography>
-                  <Typography variant="body2">Flat No. / Ref: {Reference}</Typography>
+                  */}
+                  <Typography variant="body2">{Reference}</Typography>
                   {Type === 'Income' && (
                   <Typography variant="body2">{ResidentName}</Typography>
                   )}
                   {Note != '' && (
-                  <Typography variant="body2">Note: {Note}</Typography>
+                  <Typography variant="body2">{Note}</Typography>
                   )}
                 </Box>
                 <Typography variant="h6" color={Amount > 0 ? "green" : "red"}>
