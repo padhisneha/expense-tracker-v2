@@ -12,6 +12,8 @@ import {
 import dayjs from 'dayjs';
 import Link from 'next/link';
 import { CircularProgress } from '@mui/material';
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import SmsIcon from "@mui/icons-material/Sms";
 
 export default function Home() {
 
@@ -249,6 +251,17 @@ export default function Home() {
         //iframe.src = smsApiUrl;
       }
     }
+  }
+
+  const handleSendWhatsApp = async (reference, residentName, residentPhone, amount, receiptNo, date) => {
+    
+    const formattedDate = dayjs(date).format('DD/MM/YYYY');
+    const message = `Thank you for your contribution of Rs ${Math.abs(amount)}/- towards Janpriya NileValley Block 1 cultural events. Receipt No: ${receiptNo}, Flat No: ${reference}, Date: ${formattedDate}`;
+    const phoneNumber = residentPhone.replace(/\D/g, ''); // Remove non-numeric characters
+
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+    window.open(whatsappUrl, "_blank");
   }
 
   const resetForm = () => {
@@ -580,8 +593,49 @@ export default function Home() {
                 <Typography variant="h6" color={Amount > 0 ? "green" : "red"}>
                   {Amount > 0 ? `+ ₹${Amount}` : `- ₹${Math.abs(Amount)}`}
                   <br />
-                  {Amount > 0 && (
-                  <Button variant="h6" color="blue" onClick={() => handleSendSMS(Reference, ResidentName, ResidentPhone, Amount, ReceiptNo, Date)}>Send Receipt</Button>
+                  {Amount > 0 && ResidentPhone != "" && (
+                  <Button
+                    variant="contained"
+                    startIcon={<SmsIcon />}
+                    onClick={() => handleSendSMS(Reference, ResidentName, ResidentPhone, Amount, ReceiptNo, Date)}
+                    sx={{
+                      backgroundColor: "#1976d2", // Blue like SMS
+                      color: "white",
+                      textTransform: "none",
+                      fontSize: "14px",
+                      fontWeight: "bold",
+                      borderRadius: "25px",
+                      padding: "2px 4px",
+                      "&:hover": { backgroundColor: "#115293" },
+                      width: "130px"
+                    }}
+                  >
+                    SMS
+                  </Button>
+                  )}
+                  <br />
+                  {Amount > 0 && ResidentPhone != "" && (
+                  <Button
+                    variant="contained"
+                    startIcon={<WhatsAppIcon />}
+                    onClick={() => handleSendWhatsApp(Reference, ResidentName, ResidentPhone, Amount, ReceiptNo, Date)}
+                    sx={{
+                      backgroundColor: "#25D366",
+                      color: "white",
+                      textTransform: "none",
+                      fontSize: "14px",
+                      fontWeight: "bold",
+                      borderRadius: "25px",
+                      padding: "2px 4px",
+                      "&:hover": {
+                        backgroundColor: "#1EBE5B",
+                      },
+                      width: "130px"
+                    }}
+                    fullWidth
+                  >
+                    WhatsApp
+                  </Button>
                   )}
                 </Typography>
                 <Button variant="text" color="error" onClick={() => removeExpense(id)}>
